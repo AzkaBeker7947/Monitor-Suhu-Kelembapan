@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Monitor Suhu & Kelembapan</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div id="alert" class="alert" style="display:none"></div>
+    <div class="card">
+      <h1>Monitor Suhu & Kelembapan</h1>
+      <div class="current">
+        <div class="left">
+          <div id="temp" class="temp">-- °C</div>
+          <div id="desc" class="desc">Menunggu sensor...</div>
+        </div>
+        <div class="right">
+          <div class="label">Kelembapan</div>
+          <div id="hum" class="hum">-- %</div>
+        </div>
+      </div>
+
+      <canvas id="chart"></canvas>
+      <div class="controls">
+        <input id="ipInput" placeholder="Masukkan IP Wemos (atau gunakan ?ip=...)" />
+        <button id="btnConnect">Connect</button>
+      </div>
+      <div class="footer">Gunakan parameter URL <code>?ip=192.168.4.1</code> untuk auto-connect.</div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
