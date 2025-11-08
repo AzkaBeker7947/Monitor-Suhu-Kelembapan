@@ -21,8 +21,6 @@ body{
 .container {
   width: 100%;
   max-width: 1080px;
-  margin: 0 auto; /* supaya di tengah */
-  padding: 16px;
 }
 .card{
   background:var(--card);
