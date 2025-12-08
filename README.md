@@ -47,9 +47,9 @@ Selain itu, proyek ini juga dilengkapi dengan sistem deteksi:
 ## 🚀 Cara Menggunakan
 
 1. Upload file `wemos_dht22.ino` ke Wemos D1 Mini melalui **Arduino IDE**.  
-2. Ubah SSID dan Password sesuai WiFi sekolah atau rumah kamu.  
-3. Jalankan Wemos dan lihat **alamat IP** pada Serial Monitor.  
-4. Buka website di browser:
+2. Ubah SSID dan Password sesuai WiFi yang kamu inginkan.  
+3. Jalankan Wemos dan lihat **API KEY** dan **DATABASE_URL** pada Serial Monitor.  
+4. Buka website di browser dan masukkan **API KEY** dan **DATABASE_URL**:
 5. Selesai! 🎉 Data suhu dan kelembapan akan tampil otomatis di web.
 
 ---
