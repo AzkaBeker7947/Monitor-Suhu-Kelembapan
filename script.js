@@ -6,13 +6,13 @@ import { getDatabase, ref, onValue }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAVB7gvybyF5zT0Q5FYrZkrKxOhVb1kh20",
+  authDomain: "pengukur-suhu-ruangan-884a6.firebaseapp.com",
+  databaseURL: "https://pengukur-suhu-ruangan-884a6-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "pengukur-suhu-ruangan-884a6",
+  storageBucket: "pengukur-suhu-ruangan-884a6.firebasestorage.app",
+  messagingSenderId: "396222673264",
+  appId: "1:396222673264:web:217c8973ad8ca101da9fb5"
 };
 
 const app = initializeApp(firebaseConfig);
