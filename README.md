@@ -13,7 +13,6 @@ Data sensor dikirim melalui server web lokal yang dihosting oleh Wemos, lalu dit
 
 Selain itu, proyek ini juga dilengkapi dengan sistem deteksi:
 - ⚠️ **Sensor Error** — menampilkan pesan khusus jika sensor DHT22 tidak terpasang atau tidak terbaca.  
-- 🌐 **Koneksi WiFi** — memberi tahu pengguna jika perangkat tidak terhubung ke WiFi yang sesuai.  
 - 📊 **Grafik Realtime** — menampilkan perubahan suhu dan kelembapan dalam bentuk chart yang dinamis.  
 - 💡 **Tampilan Responsif** — web otomatis menyesuaikan tampilan untuk layar HP maupun laptop.
 
@@ -32,17 +31,16 @@ Selain itu, proyek ini juga dilengkapi dengan sistem deteksi:
 - **Chart.js** untuk grafik realtime  
 - **Vercel** untuk hosting web  
 - **GitHub** untuk penyimpanan kode sumber  
+- **FireBase** untuk penyimpanan database realtime
 
 ---
 
 ## 📡 Cara Kerja Singkat
 
 1. Wemos membaca suhu dan kelembapan dari sensor DHT22.  
-2. Nilai tersebut disajikan melalui server lokal di endpoint `/sensor`.  
+2. Nilai tersebut disajikan melalui server FireBase.  
 3. Website yang dihosting di Vercel mengambil data tersebut menggunakan AJAX/Fetch API.  
 4. Data ditampilkan dalam bentuk angka dan grafik realtime.  
-5. Jika tidak satu jaringan dengan Wemos, website menampilkan pesan:  
-   > “Untuk mengaksesnya, anda perlu terkoneksi dengan WiFi {SSID} terlebih dahulu.”
 
 ---
 
