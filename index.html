@@ -9,14 +9,18 @@
 </head>
 <body>
   <div class="container">
+
     <div id="alert" class="alert" style="display:none"></div>
+
     <div class="card">
       <h1>Monitor Suhu & Kelembapan</h1>
+
       <div class="current">
         <div class="left">
           <div id="temp" class="temp">-- °C</div>
-          <div id="desc" class="desc">Menunggu sensor...</div>
+          <div id="desc" class="desc">Menunggu data Firebase...</div>
         </div>
+
         <div class="right">
           <div class="label">Kelembapan</div>
           <div id="hum" class="hum">-- %</div>
@@ -24,13 +28,14 @@
       </div>
 
       <canvas id="chart"></canvas>
-      <div class="controls">
-        <input id="ipInput" placeholder="Masukkan IP Wemos (atau gunakan ?ip=...)" />
-        <button id="btnConnect">Connect</button>
+
+      <div class="footer">
+        Data real-time dari Firebase Realtime Database
       </div>
-      <div class="footer">Gunakan parameter URL <code>?ip=192.168.4.1</code> untuk auto-connect.</div>
     </div>
+
   </div>
-  <script src="script.js"></script>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>
