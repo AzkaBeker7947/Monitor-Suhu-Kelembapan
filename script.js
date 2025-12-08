@@ -1,13 +1,20 @@
-// ----------------------------
-// AMBIL PARAMETER DARI URL
-// ----------------------------
+// ======================================================
+//                MODULE FIREBASE (MODULAR)
+// ======================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ======================================================
+//             AMBIL PARAMETER DARI URL
+// ======================================================
 const params = new URLSearchParams(location.search);
 const apiKeyParam = params.get("api") || "";
 const dbUrlParam = params.get("db") || "";
 
-// ----------------------------
-// FORM INPUT (HTML ELEMENTS)
-// ----------------------------
+// ======================================================
+//                FORM INPUT
+// ======================================================
 const apiInput = document.getElementById("apiInput");
 const dbInput = document.getElementById("dbInput");
 const btnConnect = document.getElementById("btnConnect");
@@ -15,37 +22,32 @@ const btnConnect = document.getElementById("btnConnect");
 apiInput.value = apiKeyParam;
 dbInput.value = dbUrlParam;
 
-// ----------------------------
-// KONDISI: Jika parameter lengkap → Initialize Firebase
-// ----------------------------
-let firebaseReady = false;
+// ======================================================
+//          KONFIGURASI FIREBASE (DINAMIS)
+// ======================================================
 let db = null;
 
+function initFirebase(apiKey, dbURL) {
+  const firebaseConfig = {
+    apiKey: apiKey,
+    authDomain: "custom.firebaseapp.com",
+    databaseURL: dbURL
+  };
+
+  const app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
+
+  console.log("Firebase Connected!");
+
+  startRealtimeListener();
+}
+
+// Jika parameter URL lengkap → langsung konek
 if (apiKeyParam && dbUrlParam) {
   initFirebase(apiKeyParam, dbUrlParam);
 }
 
-// ----------------------------
-// INIT FIREBASE (DYNAMIC)
-// ----------------------------
-function initFirebase(api, dbURL) {
-  const firebaseConfig = {
-    apiKey: api,
-    authDomain: "custom.firebaseapp.com",
-    databaseURL: dbURL,
-  };
-
-  const app = firebase.initializeApp(firebaseConfig);
-  db = firebase.database();
-  firebaseReady = true;
-
-  console.log("Firebase Connected!");
-  startRealtimeListener();
-}
-
-// ----------------------------
-// KETIKA TEKAN CONNECT
-// ----------------------------
+// Tombol connect ditekan
 btnConnect.addEventListener("click", () => {
   const api = apiInput.value.trim();
   const dbURL = dbInput.value.trim();
@@ -55,18 +57,23 @@ btnConnect.addEventListener("click", () => {
     return;
   }
 
-  // Simpan ke URL agar tersimpan permanen
+  // Masukkan ke URL agar tersimpan permanen
   const url = new URL(location.href);
   url.searchParams.set("api", api);
   url.searchParams.set("db", dbURL);
 
-  location.href = url.toString(); // reload halaman
+  location.href = url.toString(); // reload
 });
 
-// ----------------------------
-// CHART SETUP
-// ----------------------------
+// ======================================================
+//                   ELEMENT HTML
+// ======================================================
+const alertBox = document.getElementById("alert");
 const ctx = document.getElementById("chart").getContext("2d");
+
+// ======================================================
+//                      CHART
+// ======================================================
 const chartData = {
   labels: [],
   datasets: [
@@ -84,26 +91,23 @@ const chart = new Chart(ctx, {
   }
 });
 
-// ----------------------------
-// ALERT
-// ----------------------------
-const alertBox = document.getElementById("alert");
-
+// ======================================================
+//                      ALERT
+// ======================================================
 function showAlert(msg, type = "error") {
   alertBox.textContent = msg;
   alertBox.className = "alert " + (type === "error" ? "error" : "info");
   alertBox.style.display = "block";
 }
-
 function hideAlert() { alertBox.style.display = "none"; }
 
-// ----------------------------
-// LISTENER REAL-TIME (DHTLATEST)
-// ----------------------------
+// ======================================================
+//               LISTENER REALTIME DHTLATEST
+// ======================================================
 function startRealtimeListener() {
-  if (!firebaseReady) return;
+  if (!db) return;
 
-  firebase.database().ref("dhtLatest").on("value", snapshot => {
+  onValue(ref(db, "dhtLatest"), snapshot => {
     const data = snapshot.val();
     if (!data) {
       showAlert("Belum ada data dari Firebase.");
@@ -112,12 +116,13 @@ function startRealtimeListener() {
 
     hideAlert();
 
+    // Tampilkan ke UI
     document.getElementById("temp").textContent = data.suhu.toFixed(1) + " °C";
     document.getElementById("hum").textContent = data.kelembapan.toFixed(1) + " %";
     document.getElementById("desc").textContent = data.status;
 
+    // Update grafik
     const time = new Date().toLocaleTimeString();
-
     if (chartData.labels.length > 20) {
       chartData.labels.shift();
       chartData.datasets[0].data.shift();
