@@ -1,97 +1,126 @@
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+#include <FirebaseESP8266.h>
 #include "DHT.h"
 
-// --------- CONFIGURE THESE (ganti setelah sampai di sekolah) ---------
-const char* ssid = "SSID_SEKOLAH";      // <-- ganti dengan SSID sekolah Anda
-const char* password = "PASSWORD_WIFI"; // <-- ganti dengan password sekolah
-// Jika ingin Wemos jadi Access Point jika gagal konek, isi ap_ssid dan ap_password
-const char* ap_ssid = "WEMOS-AP";
-const char* ap_password = "12345678"; // minimal 8 karakter
-// --------------------------------------------------------------------
+// ---------------------------
+// Konfigurasi Firebase
+// ---------------------------
+#define FIREBASE_HOST "https://NAMA-PROJECTMU-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define FIREBASE_AUTH "TIDAK-DIPERLUKAN-KOSONGKAN"
 
+// ---------------------------
+// Konfigurasi WiFi
+// ---------------------------
+const char* ssid = "NAMA WIFI YANG INGIN DI PAKAI";
+const char* password = "PASSWORD WIFI YANG INGIN DI PAKAI";
+
+// ---------------------------
+// Konfigurasi DHT & LED
+// ---------------------------
+#define ledRed D8
+#define ledGreen D7
+#define ledBlue D6
 #define DHTPIN D2
 #define DHTTYPE DHT22
 
 DHT dht(DHTPIN, DHTTYPE);
-ESP8266WebServer server(80);
 
-void handleSensor();
+// Firebase object
+FirebaseData fbData;
+
+unsigned long lastSend = 0;
 
 void setup() {
   Serial.begin(115200);
   dht.begin();
-  pinMode(D5, OUTPUT); // ledBlue
-  pinMode(D6, OUTPUT); // ledGreen
-  pinMode(D7, OUTPUT); // ledRed
 
+  pinMode(ledRed, OUTPUT);
+  pinMode(ledGreen, OUTPUT);
+  pinMode(ledBlue, OUTPUT);
+
+  // -----------------------------
+  // CONNECTING TO WIFI
+  // -----------------------------
   Serial.println();
-  Serial.print("Menghubungkan ke WiFi: ");
-  Serial.println(ssid);
-
+  Serial.println("Menghubungkan ke WiFi...");
   WiFi.begin(ssid, password);
 
-  unsigned long start = millis();
-  const unsigned long timeout = 20000; // 20 detik timeout untuk percobaan koneksi
-  while (WiFi.status() != WL_CONNECTED && millis() - start < timeout) {
-    delay(500);
+  while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
+    delay(300);
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println();
-    Serial.print("Terhubung ke WiFi. IP: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println();
-    Serial.println("Gagal terhubung ke WiFi, memulai Access Point...");
-    WiFi.softAP(ap_ssid, ap_password);
-    Serial.print("AP aktif. SSID: ");
-    Serial.println(ap_ssid);
-    Serial.print("AP IP: ");
-    Serial.println(WiFi.softAPIP());
-  }
+  Serial.println();
+  Serial.print("✔ Terhubung! IP: ");
+  Serial.println(WiFi.localIP());
 
-  server.on("/sensor", handleSensor);
-  server.begin();
-  Serial.println("Server berjalan pada port 80");
+  // -----------------------------
+  // CONNECTING TO FIREBASE
+  // -----------------------------
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnectWiFi(true);
+
+  Serial.println("✔ Firebase terhubung!");
 }
 
 void loop() {
-  server.handleClient();
-}
+  // kirim data setiap 5 detik
+  if (millis() - lastSend >= 5000) {
+    lastSend = millis();
 
-void handleSensor() {
-  float kelembapan = dht.readHumidity();
-  float suhu = dht.readTemperature();
-  String json;
+    float kelembapan = dht.readHumidity();
+    float suhu = dht.readTemperature();
 
-  if (isnan(suhu) || isnan(kelembapan)) {
-    // Sensor tidak terbaca
-    json = "{\"error\":true,\"pesan\":\"Sensor DHT22 tidak terdeteksi. Periksa koneksi ke pin D2.\"}";
-    digitalWrite(D5, LOW);
-    digitalWrite(D6, LOW);
-    digitalWrite(D7, LOW);
-  } else {
-    String keterangan;
-    float minimalSuhu = 20.0;
-    float maksimalSuhu = 30.0;
-    if (suhu < minimalSuhu) {
-      keterangan = "Terlalu Dingin";
-      digitalWrite(D5, HIGH); digitalWrite(D6, LOW); digitalWrite(D7, LOW);
-    } else if (suhu > maksimalSuhu) {
-      keterangan = "Terlalu Panas";
-      digitalWrite(D5, LOW); digitalWrite(D6, LOW); digitalWrite(D7, HIGH);
-    } else {
-      keterangan = "Suhu Ideal";
-      digitalWrite(D5, LOW); digitalWrite(D6, HIGH); digitalWrite(D7, LOW);
+    if (isnan(suhu) || isnan(kelembapan)) {
+      Serial.println("✖ Sensor ERROR");
+      digitalWrite(ledRed, HIGH);
+      digitalWrite(ledGreen, LOW);
+      digitalWrite(ledBlue, LOW);
+      return;
     }
 
-    json = "{\"error\":false,\"suhu\":" + String(suhu,1) +
-           ",\"kelembapan\":" + String(kelembapan,1) +
-           ",\"keterangan\":\"" + keterangan + "\"}";
-  }
+    String status;
+    if (suhu < 25) {
+      status = "Terlalu Dingin";
+      digitalWrite(ledRed, LOW);
+      digitalWrite(ledGreen, LOW);
+      digitalWrite(ledBlue, HIGH);
+    }
+    else if (suhu > 35) {
+      status = "Terlalu Panas";
+      digitalWrite(ledRed, HIGH);
+      digitalWrite(ledGreen, LOW);
+      digitalWrite(ledBlue, LOW);
+    }
+    else {
+      status = "Suhu Ideal";
+      digitalWrite(ledRed, LOW);
+      digitalWrite(ledGreen, HIGH);
+      digitalWrite(ledBlue, LOW);
+    }
 
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", json);
+    // ------------------------------
+    // Objek JSON untuk Firebase
+    // ------------------------------
+    FirebaseJson json;
+    json.set("suhu", suhu);
+    json.set("kelembapan", kelembapan);
+    json.set("status", status);
+    json.set("timestamp", millis());
+
+    // ------------------------------
+    // PUSH KE FIREBASE (auto index)
+    // ------------------------------
+    if (Firebase.pushJSON(fbData, "/dhtLogs", json)) {
+      Serial.println("✔ Data terkirim ke Firebase");
+    } else {
+      Serial.print("✖ Gagal kirim: ");
+      Serial.println(fbData.errorReason());
+    }
+
+    // ------------------------------
+    // UPDATE DATA TERBARU (untuk web)
+    // ------------------------------
+    Firebase.setJSON(fbData, "/dhtLatest", json);
+  }
 }
