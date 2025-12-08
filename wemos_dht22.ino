@@ -3,19 +3,19 @@
 #include "DHT.h"
 
 // ---------------------------
-// Konfigurasi Firebase
+// Konfigurasi Firebase baru
 // ---------------------------
-#define FIREBASE_HOST "https://NAMA-PROJECTMU-default-rtdb.asia-southeast1.firebasedatabase.app/"
-#define FIREBASE_AUTH "TIDAK-DIPERLUKAN-KOSONGKAN"
+#define API_KEY "API KEY FIREBASE"
+#define DATABASE_URL "URL DATABASE FIREBASE"
 
 // ---------------------------
 // Konfigurasi WiFi
 // ---------------------------
-const char* ssid = "NAMA WIFI YANG INGIN DI PAKAI";
-const char* password = "PASSWORD WIFI YANG INGIN DI PAKAI";
+const char* ssid = "NAMA WIFI YANG INGIN DI SAMBUNGKAN KE ESP8266 ATAU ESP32";
+const char* password = "PASSWORD WIFI";
 
 // ---------------------------
-// Konfigurasi DHT & LED
+// DHT22 & LED
 // ---------------------------
 #define ledRed D8
 #define ledGreen D7
@@ -27,6 +27,8 @@ DHT dht(DHTPIN, DHTTYPE);
 
 // Firebase object
 FirebaseData fbData;
+FirebaseAuth auth;
+FirebaseConfig config;
 
 unsigned long lastSend = 0;
 
@@ -39,7 +41,7 @@ void setup() {
   pinMode(ledBlue, OUTPUT);
 
   // -----------------------------
-  // CONNECTING TO WIFI
+  // CONNECT WIFI
   // -----------------------------
   Serial.println();
   Serial.println("Menghubungkan ke WiFi...");
@@ -50,22 +52,29 @@ void setup() {
     delay(300);
   }
 
-  Serial.println();
-  Serial.print("✔ Terhubung! IP: ");
+  Serial.println("\n✔ Terhubung ke WiFi");
+  Serial.print("IP: ");
   Serial.println(WiFi.localIP());
 
   // -----------------------------
-  // CONNECTING TO FIREBASE
+  // FIREBASE SETUP
   // -----------------------------
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  Firebase.reconnectWiFi(true);
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
 
-  Serial.println("✔ Firebase terhubung!");
+  // Login Anonymous (aman, cepat)
+  if (Firebase.signUp(&config, &auth, "", "")) {
+    Serial.println("✔ Login Firebase Berhasil");
+  } else {
+    Serial.printf("✖ Signup Error: %s\n", config.signer.signupError.message.c_str());
+  }
+
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
 }
 
 void loop() {
-  // kirim data setiap 5 detik
-  if (millis() - lastSend >= 5000) {
+  if (millis() - lastSend >= 1000) {
     lastSend = millis();
 
     float kelembapan = dht.readHumidity();
@@ -85,14 +94,12 @@ void loop() {
       digitalWrite(ledRed, LOW);
       digitalWrite(ledGreen, LOW);
       digitalWrite(ledBlue, HIGH);
-    }
-    else if (suhu > 35) {
+    } else if (suhu > 35) {
       status = "Terlalu Panas";
       digitalWrite(ledRed, HIGH);
       digitalWrite(ledGreen, LOW);
       digitalWrite(ledBlue, LOW);
-    }
-    else {
+    } else {
       status = "Suhu Ideal";
       digitalWrite(ledRed, LOW);
       digitalWrite(ledGreen, HIGH);
@@ -100,7 +107,7 @@ void loop() {
     }
 
     // ------------------------------
-    // Objek JSON untuk Firebase
+    // Buat JSON
     // ------------------------------
     FirebaseJson json;
     json.set("suhu", suhu);
@@ -109,17 +116,16 @@ void loop() {
     json.set("timestamp", millis());
 
     // ------------------------------
-    // PUSH KE FIREBASE (auto index)
+    // PUSH LOG (auto index)
     // ------------------------------
     if (Firebase.pushJSON(fbData, "/dhtLogs", json)) {
       Serial.println("✔ Data terkirim ke Firebase");
     } else {
-      Serial.print("✖ Gagal kirim: ");
-      Serial.println(fbData.errorReason());
+      Serial.printf("✖ Firebase Error: %s\n", fbData.errorReason().c_str());
     }
 
     // ------------------------------
-    // UPDATE DATA TERBARU (untuk web)
+    // UPDATE DATA TERBARU
     // ------------------------------
     Firebase.setJSON(fbData, "/dhtLatest", json);
   }
