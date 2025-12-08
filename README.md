@@ -1,8 +1,10 @@
 # 🌡️ Smart DHT22 Web Monitoring
 ### by Azka Jalaludin Hail  
 **SMK Mitra Industri MM2100 – Kelas X TITL 2**  
-📅 *Project dimulai: 11 November 2025*
-    *Project selesai: 8 Desember 2025*
+
+📅 
+*Project dimulai: 11 November 2025*
+*Project selesai: 8 Desember 2025*
 
 ---
 
