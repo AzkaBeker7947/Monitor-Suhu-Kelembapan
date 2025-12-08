@@ -1,20 +1,10 @@
-// ======================================================
-//                MODULE FIREBASE (MODULAR)
-// ======================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// ======================================================
-//             AMBIL PARAMETER DARI URL
-// ======================================================
 const params = new URLSearchParams(location.search);
 const apiKeyParam = params.get("api") || "";
 const dbUrlParam = params.get("db") || "";
-
-// ======================================================
-//                FORM INPUT
-// ======================================================
 const apiInput = document.getElementById("apiInput");
 const dbInput = document.getElementById("dbInput");
 const btnConnect = document.getElementById("btnConnect");
@@ -22,9 +12,6 @@ const btnConnect = document.getElementById("btnConnect");
 apiInput.value = apiKeyParam;
 dbInput.value = dbUrlParam;
 
-// ======================================================
-//          KONFIGURASI FIREBASE (DINAMIS)
-// ======================================================
 let db = null;
 
 function initFirebase(apiKey, dbURL) {
@@ -42,12 +29,10 @@ function initFirebase(apiKey, dbURL) {
   startRealtimeListener();
 }
 
-// Jika parameter URL lengkap → langsung konek
 if (apiKeyParam && dbUrlParam) {
   initFirebase(apiKeyParam, dbUrlParam);
 }
 
-// Tombol connect ditekan
 btnConnect.addEventListener("click", () => {
   const api = apiInput.value.trim();
   const dbURL = dbInput.value.trim();
@@ -57,23 +42,16 @@ btnConnect.addEventListener("click", () => {
     return;
   }
 
-  // Masukkan ke URL agar tersimpan permanen
   const url = new URL(location.href);
   url.searchParams.set("api", api);
   url.searchParams.set("db", dbURL);
 
-  location.href = url.toString(); // reload
+  location.href = url.toString();
 });
 
-// ======================================================
-//                   ELEMENT HTML
-// ======================================================
 const alertBox = document.getElementById("alert");
 const ctx = document.getElementById("chart").getContext("2d");
 
-// ======================================================
-//                      CHART
-// ======================================================
 const chartData = {
   labels: [],
   datasets: [
@@ -91,19 +69,16 @@ const chart = new Chart(ctx, {
   }
 });
 
-// ======================================================
-//                      ALERT
-// ======================================================
 function showAlert(msg, type = "error") {
   alertBox.textContent = msg;
   alertBox.className = "alert " + (type === "error" ? "error" : "info");
   alertBox.style.display = "block";
 }
-function hideAlert() { alertBox.style.display = "none"; }
 
-// ======================================================
-//               LISTENER REALTIME DHTLATEST
-// ======================================================
+function hideAlert() {
+  alertBox.style.display = "none";
+}
+
 function startRealtimeListener() {
   if (!db) return;
 
@@ -116,12 +91,10 @@ function startRealtimeListener() {
 
     hideAlert();
 
-    // Tampilkan ke UI
     document.getElementById("temp").textContent = data.suhu.toFixed(1) + " °C";
     document.getElementById("hum").textContent = data.kelembapan.toFixed(1) + " %";
     document.getElementById("desc").textContent = data.status;
 
-    // Update grafik
     const time = new Date().toLocaleTimeString();
     if (chartData.labels.length > 20) {
       chartData.labels.shift();
