@@ -1,42 +1,82 @@
 // ----------------------------
-// KONFIGURASI FIREBASE
+// AMBIL PARAMETER DARI URL
 // ----------------------------
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, onValue }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAVB7gvybyF5zT0Q5FYrZkrKxOhVb1kh20",
-  authDomain: "pengukur-suhu-ruangan-884a6.firebaseapp.com",
-  databaseURL: "https://pengukur-suhu-ruangan-884a6-default-rtdb.asia-southeast1.firebasedatabase.app/",
-  projectId: "pengukur-suhu-ruangan-884a6",
-  storageBucket: "pengukur-suhu-ruangan-884a6.firebasestorage.app",
-  messagingSenderId: "396222673264",
-  appId: "1:396222673264:web:217c8973ad8ca101da9fb5"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const params = new URLSearchParams(location.search);
+const apiKeyParam = params.get("api") || "";
+const dbUrlParam = params.get("db") || "";
 
 // ----------------------------
-// ELEMEN HTML
+// FORM INPUT (HTML ELEMENTS)
 // ----------------------------
-const alertBox = document.getElementById('alert');
-const ctx = document.getElementById('chart').getContext('2d');
+const apiInput = document.getElementById("apiInput");
+const dbInput = document.getElementById("dbInput");
+const btnConnect = document.getElementById("btnConnect");
+
+apiInput.value = apiKeyParam;
+dbInput.value = dbUrlParam;
 
 // ----------------------------
-// CHART
+// KONDISI: Jika parameter lengkap → Initialize Firebase
 // ----------------------------
+let firebaseReady = false;
+let db = null;
+
+if (apiKeyParam && dbUrlParam) {
+  initFirebase(apiKeyParam, dbUrlParam);
+}
+
+// ----------------------------
+// INIT FIREBASE (DYNAMIC)
+// ----------------------------
+function initFirebase(api, dbURL) {
+  const firebaseConfig = {
+    apiKey: api,
+    authDomain: "custom.firebaseapp.com",
+    databaseURL: dbURL,
+  };
+
+  const app = firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  firebaseReady = true;
+
+  console.log("Firebase Connected!");
+  startRealtimeListener();
+}
+
+// ----------------------------
+// KETIKA TEKAN CONNECT
+// ----------------------------
+btnConnect.addEventListener("click", () => {
+  const api = apiInput.value.trim();
+  const dbURL = dbInput.value.trim();
+
+  if (!api || !dbURL) {
+    showAlert("API Key dan Database URL harus diisi!");
+    return;
+  }
+
+  // Simpan ke URL agar tersimpan permanen
+  const url = new URL(location.href);
+  url.searchParams.set("api", api);
+  url.searchParams.set("db", dbURL);
+
+  location.href = url.toString(); // reload halaman
+});
+
+// ----------------------------
+// CHART SETUP
+// ----------------------------
+const ctx = document.getElementById("chart").getContext("2d");
 const chartData = {
   labels: [],
   datasets: [
-    { label: 'Suhu (°C)', data: [], fill: true, tension: 0.2 },
-    { label: 'Kelembapan (%)', data: [], fill: true, tension: 0.2 }
+    { label: "Suhu (°C)", data: [], fill: true, tension: 0.2 },
+    { label: "Kelembapan (%)", data: [], fill: true, tension: 0.2 }
   ]
 };
 
 const chart = new Chart(ctx, {
-  type: 'line',
+  type: "line",
   data: chartData,
   options: {
     responsive: true,
@@ -47,41 +87,47 @@ const chart = new Chart(ctx, {
 // ----------------------------
 // ALERT
 // ----------------------------
-function showAlert(msg, type = 'error') {
+const alertBox = document.getElementById("alert");
+
+function showAlert(msg, type = "error") {
   alertBox.textContent = msg;
-  alertBox.className = 'alert ' + (type === 'error' ? 'error' : 'info');
-  alertBox.style.display = 'block';
+  alertBox.className = "alert " + (type === "error" ? "error" : "info");
+  alertBox.style.display = "block";
 }
-function hideAlert() { alertBox.style.display = 'none'; }
+
+function hideAlert() { alertBox.style.display = "none"; }
 
 // ----------------------------
-// LISTENER DATA TERBARU
+// LISTENER REAL-TIME (DHTLATEST)
 // ----------------------------
-onValue(ref(db, "dhtLatest"), snapshot => {
-  const data = snapshot.val();
-  if (!data) {
-    showAlert("Belum ada data dari ESP8266 ke Firebase.", "error");
-    return;
-  }
+function startRealtimeListener() {
+  if (!firebaseReady) return;
 
-  hideAlert();
+  firebase.database().ref("dhtLatest").on("value", snapshot => {
+    const data = snapshot.val();
+    if (!data) {
+      showAlert("Belum ada data dari Firebase.");
+      return;
+    }
 
-  // Tampilkan ke UI
-  document.getElementById('temp').textContent = data.suhu.toFixed(1) + " °C";
-  document.getElementById('hum').textContent = data.kelembapan.toFixed(1) + " %";
-  document.getElementById('desc').textContent = data.status;
+    hideAlert();
 
-  // Update grafik
-  const now = new Date().toLocaleTimeString();
-  if (chartData.labels.length > 20) {
-    chartData.labels.shift();
-    chartData.datasets[0].data.shift();
-    chartData.datasets[1].data.shift();
-  }
+    document.getElementById("temp").textContent = data.suhu.toFixed(1) + " °C";
+    document.getElementById("hum").textContent = data.kelembapan.toFixed(1) + " %";
+    document.getElementById("desc").textContent = data.status;
 
-  chartData.labels.push(now);
-  chartData.datasets[0].data.push(data.suhu);
-  chartData.datasets[1].data.push(data.kelembapan);
+    const time = new Date().toLocaleTimeString();
 
-  chart.update();
-});
+    if (chartData.labels.length > 20) {
+      chartData.labels.shift();
+      chartData.datasets[0].data.shift();
+      chartData.datasets[1].data.shift();
+    }
+
+    chartData.labels.push(time);
+    chartData.datasets[0].data.push(data.suhu);
+    chartData.datasets[1].data.push(data.kelembapan);
+
+    chart.update();
+  });
+}
