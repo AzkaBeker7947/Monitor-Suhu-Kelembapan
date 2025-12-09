@@ -8,7 +8,7 @@ const apiInput = document.getElementById("apiInput");
 const dbInput = document.getElementById("dbInput");
 const btnConnect = document.getElementById("btnConnect");
 const controls = document.querySelector(".controls");
-const maxLogs = 50;
+const maxLogs = 30;
 
 apiInput.value = apiKeyParam;
 dbInput.value = dbUrlParam;
