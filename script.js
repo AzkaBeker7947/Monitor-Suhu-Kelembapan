@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onValue, push, set, query, limitToFirst, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const params = new URLSearchParams(location.search);
 const apiKeyParam = params.get("api") || "";
@@ -8,6 +8,7 @@ const apiInput = document.getElementById("apiInput");
 const dbInput = document.getElementById("dbInput");
 const btnConnect = document.getElementById("btnConnect");
 const controls = document.querySelector(".controls");
+const maxLogs = 50;
 
 apiInput.value = apiKeyParam;
 dbInput.value = dbUrlParam;
@@ -16,6 +17,32 @@ if (apiKeyParam && dbUrlParam) {
   controls.style.display = "none";
 }
 let db = null;
+
+function enforceMaxLogs() {
+  const logsRef = ref(db, "dhtLogs");
+  const q = query(logsRef, limitToFirst(1));
+
+  get(logsRef).then(snapshot => {
+    const count = snapshot.size;
+
+    if (count > maxLogs) {
+      get(q).then(oldestSnap => {
+        oldestSnap.forEach(child => {
+          remove(ref(db, "dhtLogs/" + child.key));
+          console.log("Log lama dihapus:", child.key);
+        });
+      });
+    }
+  });
+}
+
+function watchLogs() {
+  const logsRef = ref(db, "dhtLogs");
+
+  onValue(logsRef, () => {
+    enforceMaxLogs();
+  });
+}
 
 function initFirebase(apiKey, dbURL) {
   const firebaseConfig = {
@@ -30,6 +57,7 @@ function initFirebase(apiKey, dbURL) {
   console.log("Firebase Connected!");
 
   startRealtimeListener();
+  watchLogs();
 }
 
 if (apiKeyParam && dbUrlParam) {
