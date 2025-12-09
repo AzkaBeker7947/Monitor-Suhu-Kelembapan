@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, onValue }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const params = new URLSearchParams(location.search);
 const apiKeyParam = params.get("api") || "";
@@ -8,10 +7,14 @@ const dbUrlParam = params.get("db") || "";
 const apiInput = document.getElementById("apiInput");
 const dbInput = document.getElementById("dbInput");
 const btnConnect = document.getElementById("btnConnect");
+const controls = document.querySelector(".controls");
 
 apiInput.value = apiKeyParam;
 dbInput.value = dbUrlParam;
 
+if (apiKeyParam && dbUrlParam) {
+  controls.style.display = "none";
+}
 let db = null;
 
 function initFirebase(apiKey, dbURL) {
